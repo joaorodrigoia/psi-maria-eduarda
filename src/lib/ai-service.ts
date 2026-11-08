@@ -419,6 +419,7 @@ export async function generatePortfolioReportWithAI(params: {
     sessions,
     observations,
     attachments,
+    transcriptions,
   } = params;
 
   // Garantir isolamento absoluto: filtrar apenas registros cujo child_id === child.id
@@ -426,6 +427,9 @@ export async function generatePortfolioReportWithAI(params: {
   const safeObs = observations.filter((o) => o.child_id === child.id);
   const safePhotos = attachments.filter(
     (a) => a.child_id === child.id && a.type === "photo" && child.image_consent
+  );
+  const safeTranscriptions = (transcriptions || []).filter(
+    (t) => t.child_id === child.id
   );
 
   const empty = createEmptyPortfolioContent(
