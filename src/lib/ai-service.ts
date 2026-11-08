@@ -8,6 +8,11 @@ import {
   Transcription,
 } from "./types";
 import { createEmptyPortfolioContent } from "./portfolio-template";
+import {
+  generateGeminiJson,
+  generateGeminiText,
+  isGeminiConfigured,
+} from "./gemini";
 
 interface CategoryRule {
   category: ObservationCategory;
@@ -654,7 +659,7 @@ export async function generatePortfolioReportWithAI(params: {
   const dimAutonomia = synthesizeCategoryObservations(autObs, insufficient);
   const dimDescobrir = synthesizeCategoryObservations(expObs, insufficient);
 
-  return {
+  const basePortfolio: PortfolioReportContent = {
     header: {
       child_name: child.name,
       period_label: periodLabel,
@@ -809,12 +814,131 @@ export async function generatePortfolioReportWithAI(params: {
       sources: allSessionRefs,
     },
   };
+
+  if (isGeminiConfigured() && child.ai_processing_consent !== false) {
+    try {
+      const sessionsContext = safeSessions
+        .map((s) => {
+          const dLabel = formatDateBR(s.session_date);
+          const trans = safeTranscriptions
+            .filter((t) => t.session_id === s.id)
+            .map((t) => t.reviewed_text || t.raw_text)
+            .join(" ");
+          return `[Sessão de ${dLabel}] Notas: ${s.notes || ""} | Complemento: ${
+            s.complementary_notes || ""
+          } | Transcrição: ${trans}`;
+        })
+        .join("\n");
+
+      const systemPrompt = `Você é a assistente de síntese observacional da Psi. Maria Eduarda (Acompanhamento Infantil).
+REGRAS ÉTICAS INEGOCIÁVEIS:
+1. NUNCA invente acontecimentos que não estejam nos registros fornecidos.
+2. NUNCA atribua diagnósticos clínicos/médicos ou conclusões definitivas.
+3. Diferencie fatos observados de interpretações.
+4. Mantenha linguagem profissional, serena, respeitosa e acolhedora em português brasileiro (pt-BR).
+5. Preserve as referências às datas das sessões no formato (Ref.: Sessão de DD/MM/AAAA).
+6. Quando não houver dados suficientes nos registros para um campo, mantenha a mensagem indicando que não constam dados suficientes no período.`;
+
+      interface GeminiRefinedFields {
+        sec1_demonstra?: string;
+        sec1_interessa_por?: string;
+        sec1_relacoes_observamos?: string;
+        sec1_formas_preferidas_brincar?: string;
+        sec1_pudemos_conhecer?: string;
+        sec4_relato_corporal?: string;
+        sec5_relato_descobertas?: string;
+        sec10_observamos_que?: string;
+        sec10_conquistas_destaque?: string;
+      }
+
+      const userPrompt = `Criança: ${child.name}
+Período: ${periodLabel}
+Registros autorizados desta criança:
+${sessionsContext}
+
+Com base EXCLUSIVAMENTE nos registros acima, retorne um objeto JSON com redação observacional refinada (preservando citações "(Ref.: Sessão de DD/MM/AAAA)") para os seguintes campos:
+{
+  "sec1_demonstra": "...",
+  "sec1_interessa_por": "...",
+  "sec1_relacoes_observamos": "...",
+  "sec1_formas_preferidas_brincar": "...",
+  "sec1_pudemos_conhecer": "...",
+  "sec4_relato_corporal": "...",
+  "sec5_relato_descobertas": "...",
+  "sec10_observamos_que": "...",
+  "sec10_conquistas_destaque": "..."
+}`;
+
+      const refined = await generateGeminiJson<GeminiRefinedFields>(
+        systemPrompt,
+        userPrompt
+      );
+      if (refined) {
+        if (refined.sec1_demonstra)
+          basePortfolio.sec1_quem_e_essa_cria.demonstra = refined.sec1_demonstra;
+        if (refined.sec1_interessa_por)
+          basePortfolio.sec1_quem_e_essa_cria.interessa_por = refined.sec1_interessa_por;
+        if (refined.sec1_relacoes_observamos)
+          basePortfolio.sec1_quem_e_essa_cria.relacoes_observamos =
+            refined.sec1_relacoes_observamos;
+        if (refined.sec1_formas_preferidas_brincar)
+          basePortfolio.sec1_quem_e_essa_cria.formas_preferidas_brincar =
+            refined.sec1_formas_preferidas_brincar;
+        if (refined.sec1_pudemos_conhecer)
+          basePortfolio.sec1_quem_e_essa_cria.pudemos_conhecer =
+            refined.sec1_pudemos_conhecer;
+        if (refined.sec4_relato_corporal)
+          basePortfolio.sec4_meu_corpo_em_movimento.relato_corporal =
+            refined.sec4_relato_corporal;
+        if (refined.sec5_relato_descobertas)
+          basePortfolio.sec5_descobertas_aprendizagens.relato_descobertas =
+            refined.sec5_relato_descobertas;
+        if (refined.sec10_observamos_que)
+          basePortfolio.sec10_olhar_sobre_percurso.observamos_que =
+            refined.sec10_observamos_que;
+        if (refined.sec10_conquistas_destaque)
+          basePortfolio.sec10_olhar_sobre_percurso.conquistas_destaque =
+            refined.sec10_conquistas_destaque;
+      }
+    } catch {
+      // Fallback seguro determinístico
+    }
+  }
+
+  return basePortfolio;
 }
 
 /**
  * Reformula um trecho específico durante a revisão humana sem inventar fatos,
  * tornando a linguagem mais fluida, acolhedora e pedagógica.
  */
+export async function reformulateTextWithAI(
+  currentText: string,
+  instruction: "mais_acolhedor" | "mais_conciso" | "destacar_mediacao"
+): Promise<string> {
+  const trimmed = currentText.trim();
+  if (!trimmed) return trimmed;
+
+  if (isGeminiConfigured()) {
+    const instructionLabel =
+      instruction === "mais_acolhedor"
+        ? "Torne a redação mais acolhedora, serena e fluida, mantendo rigorosamente os fatos e as referências de sessão."
+        : instruction === "mais_conciso"
+        ? "Torne a redação mais concisa, direta e clara, mantendo rigorosamente os fatos e as referências de sessão."
+        : "Destaque de forma respeitosa a mediação e o apoio oferecidos pela profissional durante a vivência, sem inventar fatos novos e mantendo as referências de sessão.";
+
+    const aiResult = await generateGeminiText(
+      "Você é assistente de redação observacional da Psi. Maria Eduarda. Reescreva apenas o trecho enviado conforme a instrução, sem inventar fatos, sem diagnósticos clínicos e preservando referências (Ref.: ...). Retorne apenas o texto reescrito.",
+      `Instrução: ${instructionLabel}\n\nTexto original:\n${trimmed}`
+    );
+    if (aiResult) {
+      return aiResult;
+    }
+  }
+
+  return reformulateTextPreserveFacts(trimmed, instruction);
+}
+
 export function reformulateTextPreserveFacts(
   currentText: string,
   instruction: "mais_acolhedor" | "mais_conciso" | "destacar_mediacao"

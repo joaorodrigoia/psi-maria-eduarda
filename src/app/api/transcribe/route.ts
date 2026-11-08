@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getGeminiModelName,
+  isGeminiConfigured,
+  transcribeAudioWithGemini,
+} from "@/lib/gemini";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,7 +25,7 @@ export async function POST(req: NextRequest) {
       vsForm.append("model", "whisper-1");
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 6000);
+      const timeout = setTimeout(() => controller.abort(), 3500);
 
       const res = await fetch(`${voiceStudioBase}/audio/transcriptions`, {
         method: "POST",
@@ -40,7 +45,27 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch {
-      // VoiceStudio local offline ou indisponível no momento — prosseguir para fallback
+      // VoiceStudio local offline ou indisponível no momento — prosseguir para Gemini 2.5 Flash
+    }
+
+    // 2. Tentar Google Gemini Multimodal (gemini-2.5-flash)
+    if (isGeminiConfigured()) {
+      try {
+        const arrayBuf = await audioFile.arrayBuffer();
+        const geminiText = await transcribeAudioWithGemini(
+          arrayBuf,
+          audioFile.type || "audio/webm"
+        );
+        if (geminiText) {
+          return NextResponse.json({
+            ok: true,
+            provider: `Google Gemini (${getGeminiModelName()})`,
+            text: geminiText,
+          });
+        }
+      } catch {
+        // Prosseguir para próximo fallback
+      }
     }
 
     // 2. Tentar OpenAI Whisper se OPENAI_API_KEY estiver configurada no servidor

@@ -8,8 +8,9 @@ import {
 } from "@/lib/db";
 import {
   generatePortfolioReportWithAI,
-  reformulateTextPreserveFacts,
+  reformulateTextWithAI,
 } from "@/lib/ai-service";
+import { getGeminiModelName, isGeminiConfigured } from "@/lib/gemini";
 import {
   Child,
   PortfolioPhotoSlot,
@@ -27,12 +28,14 @@ export async function GET() {
     ok: true,
     data: db,
     integrationStatus: {
-      aiProvider: process.env.GEMINI_API_KEY
-        ? "Google Gemini (Configurado)"
+      aiProvider: isGeminiConfigured()
+        ? `Google Gemini (${getGeminiModelName()} — Ativo)`
         : process.env.OPENAI_API_KEY
         ? "OpenAI (Configurado)"
-        : "Motor Observacional Estruturado Local (Ativo — Sem envio externo de dados)",
-      transcriptionProvider: process.env.VOICESTUDIO_API_URL || "http://127.0.0.1:3900/v1 (VoiceStudio Local + Web Speech)",
+        : "Motor Observacional Estruturado Local (Ativo)",
+      transcriptionProvider: isGeminiConfigured()
+        ? `Google Gemini Multimodal (${getGeminiModelName()}) + VoiceStudio Local`
+        : process.env.VOICESTUDIO_API_URL || "http://127.0.0.1:3900/v1 (VoiceStudio Local + Web Speech)",
       databaseProvider: process.env.NEXT_PUBLIC_SUPABASE_URL
         ? "Supabase PostgreSQL"
         : "Persistência Local Segura (data/db.json + Schema PostgreSQL Pronto)",
@@ -492,7 +495,7 @@ export async function POST(req: NextRequest) {
 
     // 10. REFORMULAR TRECHO COM IA DURANTE REVISÃO
     if (action === "reformulate_text") {
-      const reformulated = reformulateTextPreserveFacts(
+      const reformulated = await reformulateTextWithAI(
         String(payload.text || ""),
         payload.instruction || "mais_acolhedor"
       );
