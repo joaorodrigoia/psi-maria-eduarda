@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --apple-bg: #FFF1EA;
+    --apple-surface: #FFFFFF;
+    --apple-primary: #E8476A;
+    --apple-text: #3B1425;
+    --apple-secondary: #8C5A68;
+    --glass-bg: rgba(255, 255, 255, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.75);
+    --glass-specular: rgba(255, 255, 255, 0.85);
+    --surface-border: rgba(23, 33, 43, 0.08);
+  }
+
+  .dark {
+    --apple-bg: #1F0E1B;
+    --apple-surface: #33192A;
+    --apple-primary: #FF8A5B;
+    --apple-text: #FFF4F0;
+    --apple-secondary: #F0BCC8;
+    --glass-bg: rgba(32, 40, 52, 0.68);
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --glass-specular: rgba(255, 255, 255, 0.18);
+    --surface-border: rgba(247, 249, 252, 0.09);
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background-color: var(--apple-bg);
+    background-image:
+      radial-gradient(900px 600px at 8% -5%, rgba(255, 138, 91, 0.55), transparent 60%),
+      radial-gradient(800px 600px at 95% 5%, rgba(255, 105, 140, 0.50), transparent 60%),
+      radial-gradient(900px 700px at 70% 105%, rgba(255, 90, 80, 0.38), transparent 60%),
+      radial-gradient(700px 500px at 0% 90%, rgba(255, 190, 120, 0.50), transparent 60%);
+    background-attachment: fixed;
+    color: var(--apple-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+}
+
+/* ============================================================================
+ * APPLE LIQUID GLASS DESIGN TOKENS & CLASSES
+ * Regra HIG: Utilizar Liquid Glass em navegação, barras de ferramentas,
+ * controles flutuantes e modais. Manter textos, anotações e relatórios sobre
+ * superfícies de leitura estáveis (.apple-stable-surface).
+ * ============================================================================ */
+
+@layer components {
+  .liquid-glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 12px 32px -4px rgba(16, 21, 29, 0.08),
+      0 2px 6px -1px rgba(16, 21, 29, 0.04),
+      inset 0 1px 0 0 var(--glass-specular);
+  }
+
+  .dark .liquid-glass {
+    box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.45),
+      0 4px 12px -2px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 0 var(--glass-specular);
+  }
+
+  .liquid-glass-pill {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 6px 20px -2px rgba(16, 21, 29, 0.07),
+      inset 0 1px 0 0 var(--glass-specular);
+  }
+
+  /* Superfície de leitura estável para cartões de conteúdo, prontuários, anotações e relatórios */
+  .apple-stable-surface {
+    background-color: var(--apple-surface);
+    color: var(--apple-text);
+    border: 1px solid var(--surface-border);
+    box-shadow: 0 4px 20px -2px rgba(23, 33, 43, 0.05),
+      0 1px 3px 0 rgba(23, 33, 43, 0.03);
+  }
+
+  .dark .apple-stable-surface {
+    box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.35),
+      0 1px 3px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  /* Campos de formulário sobre superfícies estáveis com alto contraste */
+  .apple-input {
+    background-color: #FFF1EA;
+    color: #3B1425;
+    border: 1px solid rgba(23, 33, 43, 0.12);
+    border-radius: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+
+  .apple-input:focus {
+    outline: none;
+    background-color: #FFFFFF;
+    border-color: #E8476A;
+    box-shadow: 0 0 0 3px rgba(232, 71, 106, 0.18);
+  }
+
+  .dark .apple-input {
+    background-color: #2A1424;
+    color: #FFF4F0;
+    border-color: rgba(247, 249, 252, 0.12);
+  }
+
+  .dark .apple-input:focus {
+    background-color: #1B2330;
+    border-color: #FF8A5B;
+    box-shadow: 0 0 0 3px rgba(255, 138, 91, 0.22);
+  }
+}
+
+.dark body {
+  background-image:
+    radial-gradient(900px 600px at 8% -5%, rgba(255, 110, 70, 0.38), transparent 60%),
+    radial-gradient(800px 600px at 95% 5%, rgba(232, 71, 106, 0.40), transparent 60%),
+    radial-gradient(900px 700px at 70% 105%, rgba(200, 50, 80, 0.35), transparent 60%),
+    radial-gradient(700px 500px at 0% 90%, rgba(255, 150, 80, 0.25), transparent 60%);
+}
+
+.sunset-gradient {
+  background-image: linear-gradient(135deg, #FF9A56 0%, #FF6B6B 48%, #E8476A 100%);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes soundWave {
+  0%, 100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-sound-wave {
+  animation: soundWave 0.9s ease-in-out infinite;
+}
+
+/* Acessibilidade: respeitar prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Regras para Impressão e Exportação Fiel em A4 (Seção 9) */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm 14mm 16mm 14mm;
+  }
+
+  body,
+  .dark body {
+    background: #ffffff !important;
+    color: #3B1425 !important;
+    font-size: 10.5pt;
+  }
+
+  .print-page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+/* Tipografia estilo Anthropic: títulos em serifa editorial, texto em sans neutra */
+h1, h2, h3, h4 {
+  font-family: "Newsreader", "Tiempos Headline", Georgia, serif !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.015em !important;
+}
+h1 { line-height: 1.12; }
+body { font-feature-settings: "cv11", "ss01"; letter-spacing: -0.003em; }
