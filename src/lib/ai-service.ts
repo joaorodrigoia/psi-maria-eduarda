@@ -826,7 +826,7 @@ export async function generatePortfolioReportWithAI(params: {
           const dLabel = formatDateBR(s.session_date);
           const trans = safeTranscriptions
             .filter((t) => t.session_id === s.id)
-            .map((t) => t.reviewed_text || t.raw_text)
+            .map((t) => t.text)
             .join(" ");
           return `[Sessão de ${dLabel}] Notas: ${s.notes || ""} | Complemento: ${
             s.complementary_notes || ""
